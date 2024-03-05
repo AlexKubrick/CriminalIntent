@@ -13,6 +13,9 @@
         <action
             android:id="@+id/show_crime_detail"
             app:destination="@id/crimeDetailFragment" />
+        <action
+            android:id="@+id/show_empty_fragment"
+            app:destination="@id/emptyCrimeListFragment" />
     </fragment>
     <fragment
         android:id="@+id/crimeDetailFragment"
@@ -28,6 +31,14 @@
         <action
             android:id="@+id/select_time"
             app:destination="@id/timePickerFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/emptyCrimeListFragment"
+        android:name="com.bignerdranch.android.criminalintent.EmptyCrimeListFragment"
+        android:label="EmptyCrimeListFragment">
+        <action
+            android:id="@+id/show_crime_detail"
+            app:destination="@id/crimeDetailFragment" />
     </fragment>
     <dialog
         android:id="@+id/datePickerFragment"
