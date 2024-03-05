@@ -74,31 +74,30 @@ class CrimeListFragment: Fragment() {
                         }
 
                     if (crimes.isEmpty()) {
-                        binding.textNoCrimes.visibility = View.VISIBLE
-                        binding.buttonAddCrime.visibility = View.VISIBLE
-
-//                        binding.buttonAddCrime.setOnClickListener {
-//                            val newCrime = Crime(
-//                            id = UUID.randomUUID(),
-//                            title = "",
-//                            date = Date(),
-//                            isSolved = false
-//                        )
-//                            // Suspension functions can be called only within coroutine body
-//                            crimeListViewModel.addCrime(newCrime)
-//                            findNavController().navigate(
-//                                CrimeListFragmentDirections.showCrimeDetail(newCrime.id)
-//                            )
-//                        }
+                        binding.crimeRecyclerView.visibility = View.GONE
+                        binding.layoutNoCrimes.visibility = View.VISIBLE
+                        binding.buttonAddCrime.setOnClickListener {
+                            val newCrime = Crime(
+                                id = UUID.randomUUID(),
+                                title = "",
+                                date = Date(),
+                                isSolved = false
+                            )
+                            // Suspension functions can be called only within coroutine body
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                crimeListViewModel.addCrime(newCrime)
+                            }
+                            findNavController().navigate(
+                                CrimeListFragmentDirections.showCrimeDetail(newCrime.id)
+                            )
+                        }
                     } else {
-                        binding.textNoCrimes.visibility = View.GONE
-                        binding.buttonAddCrime.visibility = View.GONE
+                        binding.crimeRecyclerView.visibility = View.VISIBLE
+                        binding.layoutNoCrimes.visibility = View.GONE
                     }
                 }
             }
         }
-
-
     }
 
 //    override fun onStart() {
