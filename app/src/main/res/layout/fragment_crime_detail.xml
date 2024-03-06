@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceHeadline5"
-        android:text="@string/crime_title_label" />
+        android:text="@string/crime_title_label"
+        android:textAppearance="?attr/textAppearanceHeadline5" />
 
     <EditText
         android:id="@+id/crime_title"
@@ -22,14 +22,20 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceHeadline5"
-        android:text="@string/crime_details_label" />
+        android:text="@string/crime_details_label"
+        android:textAppearance="?attr/textAppearanceHeadline5" />
 
     <Button
         android:id="@+id/crime_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/pick_date" />
+
+    <Button
+        android:id="@+id/crime_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/pick_time" />
 
     <CheckBox
         android:id="@+id/crime_solved"
@@ -43,9 +49,12 @@
         android:layout_height="wrap_content"
         android:text="@string/apply"
         tools:text="Apply" />
+
     <Button
-        android:id="@+id/crime_time"
+        android:id="@+id/delete_crime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/pick_time" />
+        android:text="@string/delete_crime"
+        tools:text="Delete" />
+
 </LinearLayout>

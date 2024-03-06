@@ -44,6 +44,14 @@ class CrimeRepository private constructor(
         database.crimeDao().addCrime(crime)
     }
 
+    suspend fun deleteCrime(crime: Crime) = withContext(Dispatchers.IO) {
+        database.crimeDao().deleteCrime(crime)
+    }
+
+    suspend fun deleteCrimeById(id: UUID) = withContext(Dispatchers.IO) {
+        database.crimeDao().deleteCrimeById(id)
+    }
+
 
     companion object {
         private var INSTANCE: CrimeRepository? = null

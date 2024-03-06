@@ -60,6 +60,9 @@ class CrimeListFragment: Fragment() {
         return binding.root
     }
 
+    // найти способ выбрать айди
+    // по айди удалить претсупление в бд
+    // запихнть это в нажатие кнопки
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -135,6 +138,8 @@ class CrimeListFragment: Fragment() {
         }
     }
 
+
+
     //represents the Fragment's View lifecycle
     // Namely, the lifecycle of the Fragment's View is:
     //created after onViewStateRestored(Bundle)
@@ -159,7 +164,6 @@ class CrimeListFragment: Fragment() {
             )
         }
     }
-
 
 
 }

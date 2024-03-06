@@ -45,6 +45,18 @@ class CrimeDetailViewModel(crimeId: UUID): ViewModel() {
         crime.value?.let { crimeRepository.updateCrime(it) }
     }
 
+    suspend fun deleteCrime(crime: Crime) = withContext(Dispatchers.IO) {
+        crimeRepository.deleteCrime(crime)
+    }
+
+    suspend fun deleteCrimeById(id: UUID) = withContext(Dispatchers.IO) {
+        crimeRepository.deleteCrimeById(id)
+    }
+
+    suspend fun getOneCrime(id: UUID) = withContext(Dispatchers.IO) {
+        crimeRepository.getCrime(id)
+    }
+
     override fun onCleared() {
         super.onCleared()
         updateCrimeInRepository()

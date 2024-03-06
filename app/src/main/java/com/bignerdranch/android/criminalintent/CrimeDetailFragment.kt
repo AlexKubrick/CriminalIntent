@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
@@ -157,7 +156,7 @@ class CrimeDetailFragment : Fragment() {
 
         setFragmentResultListener(
             DatePickerFragment.REQUEST_KEY_DATE
-        ) { requestKey, bundle ->
+        ) { _, bundle ->
             val newDate =
                 bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE) as Date
             crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
@@ -165,10 +164,27 @@ class CrimeDetailFragment : Fragment() {
 
         setFragmentResultListener(
             TimePickerFragment.REQUEST_KEY_TIME
-        ) { requestKey, bundle ->
-            val newDate =
-                bundle.getSerializable(TimePickerFragment.BUNDLE_KEY_TIME) as Date
+        ) { _, bundle ->
+            val newDate = bundle.getSerializable(TimePickerFragment.BUNDLE_KEY_TIME) as Date
             crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
+        }
+
+        // chapter 15. Challenge: Deleting Crimes
+
+        binding.deleteCrime.setOnClickListener {
+//            val crimeID =
+//            val crime = crimeDetailViewModel.getOneCrime()
+            viewLifecycleOwner.lifecycleScope.launch {
+                crimeDetailViewModel.deleteCrimeById(args.crimeId)
+            }
+//            viewLifecycleOwner.lifecycleScope.launch {
+//                viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                    crimeDetailViewModel.crime.collect { crime ->
+//                        crime?.let { crimeDetailViewModel.deleteCrime(it) }
+//                    }
+//                }
+//            }
+            activity?.onBackPressed()
         }
     }
 
