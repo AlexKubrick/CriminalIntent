@@ -1,6 +1,19 @@
 package com.bignerdranch.android.criminalintent
 
+import android.Manifest.permission.READ_CONTACTS
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.ContentResolver
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.ContactsContract
+import android.text.format.DateFormat
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +23,12 @@ import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
 import com.bignerdranch.android.criminalintent.databinding.FragmentCrimeDetailBinding
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -21,6 +40,8 @@ import kotlinx.coroutines.launch
 import java.util.Date
 
 //private const val TAG = "CrimeDetailFragment"
+private const val DATE_FORMAT = "EEE, MMM, dd"
+
 class CrimeDetailFragment : Fragment() {
     //    lateinit var crime: Crime
 
@@ -36,6 +57,13 @@ class CrimeDetailFragment : Fragment() {
 
     private val crimeDetailViewModel: CrimeDetailViewModel by viewModels {
         CrimeDetailViewModelFactory(args.crimeId)
+    }
+
+
+    private val selectSuspect = registerForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri: Uri? ->
+        uri?.let { parseContactSelection(it) }
     }
 
 //    override fun onCreate(savedInstanceState: Bundle?) {
@@ -186,6 +214,22 @@ class CrimeDetailFragment : Fragment() {
 //            }
             activity?.onBackPressed()
         }
+
+        binding.crimeSuspect.setOnClickListener {
+            selectSuspect.launch(null)
+        }
+
+        val selectSuspectIntent = selectSuspect.contract.createIntent(
+            requireContext(),
+            null
+        )
+        binding.crimeSuspect.isEnabled = canResolveIntent(selectSuspectIntent)
+
+        // chapter 16. Challenge: Another Implicit Intent. permission
+        binding.callSuspect.setOnClickListener {
+            requestPermissions()
+        }
+
     }
 
     override fun onDestroyView() {
@@ -213,6 +257,197 @@ class CrimeDetailFragment : Fragment() {
                 )
             }
             crimeSolved.isChecked = crime.isSolved
+
+            crimeReport.setOnClickListener {
+                val reportIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, getCrimeReport(crime))
+                    putExtra(
+                        Intent.EXTRA_SUBJECT,
+                        getString(R.string.crime_report_subject)
+                    )
+                }
+
+                val chooserIntent = Intent.createChooser(
+                    reportIntent,
+                    getString(R.string.send_report)
+                )
+                startActivity(chooserIntent)
+            }
+
+            crimeSuspect.text = crime.suspect.ifEmpty {
+                getString(R.string.crime_suspect_text)
+            }
+
+            // chapter 16. Challenge: Another Implicit Intent. Button Listener
+            callSuspect.apply {
+                setOnClickListener {
+                    requestPermissions()
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            readContacts
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        startCall()
+                    }
+                }
+            }
         }
+    }
+
+
+    // chapter 16. Challenge: Another Implicit Intent. permission
+    //https://medium.com/@ominoblair/android-runtime-permissions-91b42d2fa0a3
+    private val readContacts = READ_CONTACTS
+
+    private val readContactsPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                Toast.makeText(context, "Read contacts permission is granted", Toast.LENGTH_SHORT)
+                    .show()
+
+            } else {
+                Toast.makeText(context, "Read contacts permission is denied", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+
+    private fun requestPermissions() {
+        //check the API level
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(context, "Read contacts permission is granted", Toast.LENGTH_SHORT)
+                .show()
+        } else {
+            //check if permission is granted
+            if (context?.let {
+                    ContextCompat.checkSelfPermission(
+                        it,
+                        readContacts
+                    )
+                } == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(context, "Read contacts permission is granted", Toast.LENGTH_SHORT)
+                    .show()
+            } else {
+                if (shouldShowRequestPermissionRationale(readContacts)) {
+                    context?.let {
+                        AlertDialog.Builder(it)
+                            .setTitle("Contacts Permission")
+                            .setMessage("Contacts permission is needed in order to call an alleged suspect")
+                            .setNegativeButton("Cancel") { dialog, _ ->
+                                Toast.makeText(
+                                    context,
+                                    "Read contacts permission is denied",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                dialog.dismiss()
+                            }
+                            .setPositiveButton("OK") { _, _ ->
+                                readContactsPermission.launch(readContacts)
+                            }
+                            .show()
+                    }
+                } else {
+                    readContactsPermission.launch(readContacts)
+                }
+            }
+        }
+    }
+    //https://forums.bignerdranch.com/t/challenge-another-implicit-intent-done/18982
+    //https://forums.bignerdranch.com/t/challenge-another-implicit-intent-solution/17609
+
+    //  chapter 16. Challenge: Another Implicit Intent. get contacts
+    val REQUEST_PHONE = 0
+    @SuppressLint("Range")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        /**
+         * Get the Phone Number
+         *
+         */
+
+        when {
+            resultCode != Activity.RESULT_OK -> return
+
+            requestCode == REQUEST_PHONE && data != null -> {
+                val contactURI: Uri? = data.data
+
+                //Got the phone ID
+                val queryFields = ContactsContract.CommonDataKinds.Phone._ID
+
+                //Perform Your Query - the Phone.CONTENT_URI is like a "where" clause here
+                val cursor =
+                    requireActivity().contentResolver
+                        .query(contactURI!!, null, queryFields, null, null)
+
+                cursor.use {
+                    if (it?.count == 0) {
+                        return
+                    }
+                    it?.moveToFirst()
+                    val number =
+                        it?.getString(it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+
+                    val dialNumber = Intent(Intent.ACTION_DIAL)
+                    dialNumber.data = Uri.parse("tel: $number")
+                    startActivity(dialNumber)
+
+                }
+                cursor?.close()
+            }
+        }
+    }
+
+    //  chapter 16. Challenge: Another Implicit Intent. Calling
+    private fun startCall() {
+        val pickPhoneIntent =
+            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+        startActivityForResult(pickPhoneIntent, REQUEST_PHONE)
+    }
+
+
+    private fun getCrimeReport(crime: Crime): String {
+        val solvedString = if (crime.isSolved) {
+            getString(R.string.crime_report_solved)
+        } else {
+            getString(R.string.crime_report_unsolved)
+        }
+
+        val dateString = DateFormat.format(DATE_FORMAT, crime.date).toString()
+        val suspectText = if (crime.suspect.isBlank()) {
+            getString(R.string.crime_report_no_suspect)
+        } else {
+            getString(R.string.crime_report_suspect, crime.suspect)
+        }
+
+        return getString(
+            R.string.crime_report,
+            crime.title, dateString, solvedString, suspectText
+        )
+    }
+
+    private fun parseContactSelection(contactUri: Uri) {
+        val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+
+        val queryCursor = requireActivity().contentResolver
+            .query(contactUri, queryFields, null, null, null)
+
+        queryCursor?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val suspect = cursor.getString(0)
+                crimeDetailViewModel.updateCrime { oldCrime ->
+                    oldCrime.copy(suspect = suspect)
+                }
+            }
+        }
+    }
+
+    private fun canResolveIntent(intent: Intent): Boolean {
+        //intent.addCategory(Intent.CATEGORY_HOME)
+        val packageManager: PackageManager = requireActivity().packageManager
+        val resolvedActivity: ResolveInfo? =
+            packageManager.resolveActivity(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            )
+        return resolvedActivity != null
     }
 }
