@@ -26,6 +26,8 @@ import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
@@ -224,12 +226,6 @@ class CrimeDetailFragment : Fragment() {
             null
         )
         binding.crimeSuspect.isEnabled = canResolveIntent(selectSuspectIntent)
-
-        // chapter 16. Challenge: Another Implicit Intent. permission
-        binding.callSuspect.setOnClickListener {
-            requestPermissions()
-        }
-
     }
 
     override fun onDestroyView() {
@@ -280,16 +276,10 @@ class CrimeDetailFragment : Fragment() {
             }
 
             // chapter 16. Challenge: Another Implicit Intent. Button Listener
-            callSuspect.apply {
-                setOnClickListener {
-                    requestPermissions()
-                    if (ContextCompat.checkSelfPermission(
-                            context,
-                            readContacts
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        startCall()
-                    }
+            callSuspect.setOnClickListener {
+                requestPermissions()
+                if (ContextCompat.checkSelfPermission(it.context, readContacts) == PackageManager.PERMISSION_GRANTED) {
+                    startCall()
                 }
             }
         }
@@ -366,7 +356,6 @@ class CrimeDetailFragment : Fragment() {
 
         when {
             resultCode != Activity.RESULT_OK -> return
-
             requestCode == REQUEST_PHONE && data != null -> {
                 val contactURI: Uri? = data.data
 
