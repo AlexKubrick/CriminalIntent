@@ -9,13 +9,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
+import android.opengl.Visibility
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Settings.System.DATE_FORMAT
 import android.text.format.DateFormat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
 import android.view.ViewGroup
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
@@ -31,6 +34,8 @@ import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
+import androidx.core.content.FileProvider
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -39,14 +44,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Date
 
-//private const val TAG = "CrimeDetailFragment"
-private const val DATE_FORMAT = "EEE, MMM, dd"
 
 class CrimeDetailFragment : Fragment() {
-    //    lateinit var crime: Crime
-
 
     private var _binding: FragmentCrimeDetailBinding? = null
     private val binding
@@ -61,6 +63,7 @@ class CrimeDetailFragment : Fragment() {
         CrimeDetailViewModelFactory(args.crimeId)
     }
 
+    private var photoName: String? = null
 
     private val selectSuspect = registerForActivityResult(
         ActivityResultContracts.PickContact()
@@ -68,18 +71,18 @@ class CrimeDetailFragment : Fragment() {
         uri?.let { parseContactSelection(it) }
     }
 
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        crime = Crime(
-//            id = UUID.randomUUID(),
-//            title = "",
-//            date = Date(),
-//            isSolved = false
-//        )
-//        Log.d(TAG, "The crime ID is: ${args.crimeId}")
-//
-//
-//    }
+    private val takePhoto = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { didTakePhoto: Boolean ->
+        if (didTakePhoto && photoName != null) {
+            crimeDetailViewModel.updateCrime { oldCrime ->
+                oldCrime.copy(photoFileName = photoName)
+            }
+        }
+    }
+
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,79 +90,19 @@ class CrimeDetailFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentCrimeDetailBinding.inflate(layoutInflater, container, false)
-        //The first parameter is the same
-        //LayoutInflator you used before.
-        //
-        //The second parameter is your view’s
-        //parent, which is usually needed to configure the views properly.
-        //
-        //The third parameter tells the layout inflater whether to immediately add the
-        //inflated view to the view’s parent. You pass in false because the
-        //fragment’s view will be hosted in the activity’s container view. The
-        //fragment’s view does not need to be added to the parent view immediately –
-        //the activity will handle adding the view later.
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        //Here, you add a listener that will be invoked whenever the text in the
-        //EditText is changed. The lambda is invoked with four parameters, but
-        //you only care about the first one, text. The text is provided as a
-        //CharSequence, so to set the Crime’s title, you call toString() on it.
-        //(The doOnTextChanged() function is actually a Kotlin extension
-        //function on the EditText class. Do not forget to import it from the
-        //androidx.core.widget package.)
-        //When you are not using a parameter, like the remaining lambda parameters
-        //here, you name it _. Lambda arguments named _ are ignored, which
-        //removes unnecessary variables and can help keep your code tidy.
-
-        // -------------------------------------------------------------------
         // chapter 11
         // Challenge: Formatting the Date
         // doc: https://developer.android.com/reference/android/icu/text/DateFormat
-//        val date = crime.date
-//        val formattedDate = DateFormat.getDateInstance(DateFormat.FULL, Locale.US).format(date)
-        // в книге написано, что нужно использовать экземпляр класса android.text.format.DateFormat
-        // [icu enhancement] ICU's replacement for DateFormat. Methods, fields, and other functionality specific to ICU are labeled '[icu]'.
-        // верно ли я выполнила задание?
+        // val date = crime.date
+        // val formattedDate = DateFormat.getDateInstance(DateFormat.FULL, Locale.US).format(date)
 
+        setupUI()
 
-        // также на Стак Оверфлоу есть ответ: https://stackoverflow.com/questions/68518225/how-to-use-android-text-format-dateformat-with-kotlin
-        // было бы интересно разобрать
-
-        binding.apply {
-            crimeTitle.doOnTextChanged { text, _, _, _ ->
-//                crime = crime.copy(title = text.toString())
-                crimeDetailViewModel.updateCrime { oldCrime ->
-                    oldCrime.copy(title = text.toString())
-                }
-            }
-
-//            crimeDate.apply {
-//                // chapter 11
-//                // Challenge: Formatting the Date
-//                text = formattedDate
-//                isEnabled = false
-//            }
-
-            //The last change you need to make within this class is to set a listener on the
-            //CheckBox that will update the isSolved property of the Crime, as
-            //shown in Listing 9.10.
-            crimeSolved.setOnCheckedChangeListener { _, isChecked ->
-//                crime = crime.copy(isSolved = isChecked)
-                //а зачем копировать?
-
-                crimeDetailViewModel.updateCrime { oldCrime ->
-                    oldCrime.copy(isSolved = isChecked)
-                }
-
-            }
-        }
-
-        // With the repeatOnLifecycle(…) function, you can execute coroutine
-        //code while your fragment is in a specified lifecycle state.
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 crimeDetailViewModel.crime.collect { crime ->
@@ -170,19 +113,14 @@ class CrimeDetailFragment : Fragment() {
 
 
         // Chapter 13. Challenge: No Untitled Crimes. Handle the back button event
-        val callback = requireActivity().onBackPressedDispatcher.addCallback(this) {
-            if (binding.crimeTitle.text.trim().isEmpty()) {
-                Toast.makeText(context, "Please enter the title! ", Toast.LENGTH_LONG).show()
-            } else {
-                findNavController().popBackStack(R.id.crimeListFragment, false)
-            }
-
-        }
-
-
-        binding.applyCrime.setOnClickListener {
-            crimeDetailViewModel.updateCrimeInRepository()
-        }
+//        val callback = requireActivity().onBackPressedDispatcher.addCallback(this) {
+//            if (binding.crimeTitle.text.trim().isEmpty()) {
+//                Toast.makeText(context, "Please enter the title! ", Toast.LENGTH_LONG).show()
+//            } else {
+//                findNavController().popBackStack(R.id.crimeListFragment, false)
+//            }
+//
+//        }
 
         setFragmentResultListener(
             DatePickerFragment.REQUEST_KEY_DATE
@@ -198,22 +136,35 @@ class CrimeDetailFragment : Fragment() {
             val newDate = bundle.getSerializable(TimePickerFragment.BUNDLE_KEY_TIME) as Date
             crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
         }
+    }
+
+    private fun setupUI() {
+        binding.crimeTitle.doOnTextChanged { text, _, _, _ ->
+            crimeDetailViewModel.updateCrime { oldCrime ->
+                oldCrime.copy(title = text.toString())
+            }
+        }
+
+            //  crimeDate.apply {
+            // chapter 11
+            // Challenge: Formatting the Date
+            //    text = formattedDate
+            //      isEnabled = false
+            //    }
+
+
+        binding.crimeSolved.setOnCheckedChangeListener { _, isChecked ->
+            crimeDetailViewModel.updateCrime { oldCrime ->
+                oldCrime.copy(isSolved = isChecked)
+            }
+
+        }
 
         // chapter 15. Challenge: Deleting Crimes
-
         binding.deleteCrime.setOnClickListener {
-//            val crimeID =
-//            val crime = crimeDetailViewModel.getOneCrime()
             viewLifecycleOwner.lifecycleScope.launch {
                 crimeDetailViewModel.deleteCrimeById(args.crimeId)
             }
-//            viewLifecycleOwner.lifecycleScope.launch {
-//                viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                    crimeDetailViewModel.crime.collect { crime ->
-//                        crime?.let { crimeDetailViewModel.deleteCrime(it) }
-//                    }
-//                }
-//            }
             activity?.onBackPressed()
         }
 
@@ -221,11 +172,35 @@ class CrimeDetailFragment : Fragment() {
             selectSuspect.launch(null)
         }
 
+        binding.applyCrime.setOnClickListener {
+            crimeDetailViewModel.updateCrimeInRepository()
+        }
+
         val selectSuspectIntent = selectSuspect.contract.createIntent(
             requireContext(),
             null
         )
         binding.crimeSuspect.isEnabled = canResolveIntent(selectSuspectIntent)
+
+
+        binding.crimeCamera.setOnClickListener {
+            photoName = "IMG_${Date()}.JPG"
+            val photoFile = File(requireContext().applicationContext.filesDir,
+                photoName)
+            val photoUri = FileProvider.getUriForFile(
+                requireContext(),
+                "com.bignerdranch.android.criminalintent.fileprovider",
+                photoFile
+            )
+
+            takePhoto.launch(photoUri)
+        }
+
+//        val captureImageIntent = takePhoto.contract.createIntent(
+//            requireContext(),
+//            null
+//        )
+//        binding.crimeCamera.isEnabled = canResolveIntent(captureImageIntent)
     }
 
     override fun onDestroyView() {
@@ -274,22 +249,48 @@ class CrimeDetailFragment : Fragment() {
             crimeSuspect.text = crime.suspect.ifEmpty {
                 getString(R.string.crime_suspect_text)
             }
+            updatePhoto(crime.photoFileName)
+
 
             // chapter 16. Challenge: Another Implicit Intent. Button Listener
             callSuspect.setOnClickListener {
                 requestPermissions()
-                if (ContextCompat.checkSelfPermission(it.context, readContacts) == PackageManager.PERMISSION_GRANTED) {
+                if (ContextCompat.checkSelfPermission(
+                        it.context,
+                        readContacts
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
                     startCall()
                 }
+            }
+
+            // chapter 17. Challenge: Detail Display
+            crimePhoto.setOnClickListener {
+
+                val picturePickerDialog = crime.photoFileName?.let { photoFileName ->
+                    PicturePickerDialog.newInstPicturePicker(photoFileName)
+                }
+
+                if (picturePickerDialog != null) {
+                    fragmentManager?.let { it1 -> picturePickerDialog.show(it1, null) }
+                }
+
             }
         }
     }
 
+    //else {
+    //                    if (ContextCompat.checkSelfPermission(
+    //                            it.context,
+    //                            readContacts
+    //                        ) != PackageManager.PERMISSION_GRANTED) {
+    //                        callSuspect.visibility = GONE
+    //                    }
+    //                }
+
 
     // chapter 16. Challenge: Another Implicit Intent. permission
     //https://medium.com/@ominoblair/android-runtime-permissions-91b42d2fa0a3
-    private val readContacts = READ_CONTACTS
-
     private val readContactsPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
@@ -303,60 +304,69 @@ class CrimeDetailFragment : Fragment() {
         }
 
     private fun requestPermissions() {
-        //check the API level
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Toast.makeText(context, "Read contacts permission is granted", Toast.LENGTH_SHORT)
-                .show()
-        } else {
-            //check if permission is granted
-            if (context?.let {
-                    ContextCompat.checkSelfPermission(
-                        it,
-                        readContacts
-                    )
-                } == PackageManager.PERMISSION_GRANTED) {
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    || context?.let { ContextCompat.checkSelfPermission(it, readContacts) } == PackageManager.PERMISSION_GRANTED -> {
                 Toast.makeText(context, "Read contacts permission is granted", Toast.LENGTH_SHORT)
                     .show()
-            } else {
-                if (shouldShowRequestPermissionRationale(readContacts)) {
-                    context?.let {
-                        AlertDialog.Builder(it)
-                            .setTitle("Contacts Permission")
-                            .setMessage("Contacts permission is needed in order to call an alleged suspect")
-                            .setNegativeButton("Cancel") { dialog, _ ->
-                                Toast.makeText(
-                                    context,
-                                    "Read contacts permission is denied",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                dialog.dismiss()
-                            }
-                            .setPositiveButton("OK") { _, _ ->
-                                readContactsPermission.launch(readContacts)
-                            }
-                            .show()
-                    }
-                } else {
-                    readContactsPermission.launch(readContacts)
+            }
+            shouldShowRequestPermissionRationale(readContacts) -> {
+                context?.let {
+                    AlertDialog.Builder(it)
+                        .setTitle("Contacts Permission")
+                        .setMessage("Contacts permission is needed in order to call an alleged suspect")
+                        .setNegativeButton("Cancel") { dialog, _ ->
+                            Toast.makeText(
+                                context,
+                                "Read contacts permission is denied",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dialog.dismiss()
+                        }
+                        .setPositiveButton("OK") { _, _ ->
+                            readContactsPermission.launch(readContacts)
+                        }
+                        .show()
                 }
             }
+            else -> readContactsPermission.launch(readContacts)
         }
     }
+
+//    private val selectSuspectForCall = registerForActivityResult(
+//        ActivityResultContracts.PickContact()
+//    ) { uri: Uri? ->
+//        uri?.let { parseContactSelectionForCall(it) }
+//    }
+//
+//    @SuppressLint("Range")
+//    private fun parseContactSelectionForCall(contactUri: Uri) {
+//        val queryFields = ContactsContract.CommonDataKinds.Phone._ID
+//
+//        val queryCursor = requireActivity().contentResolver
+//            .query(contactUri, null, queryFields, null, null)
+//
+//        queryCursor?.use { cursor ->
+//            if (cursor.moveToFirst()) {
+//                val number =
+//                    cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+//
+//                val dialNumber = Intent(Intent.ACTION_DIAL)
+//                dialNumber.data = Uri.parse("tel: $number")
+//                startActivity(dialNumber)
+//            }
+//        }
+//    }
+
     //https://forums.bignerdranch.com/t/challenge-another-implicit-intent-done/18982
     //https://forums.bignerdranch.com/t/challenge-another-implicit-intent-solution/17609
-
-    //  chapter 16. Challenge: Another Implicit Intent. get contacts
-    val REQUEST_PHONE = 0
+    //chapter 16. Challenge: Another Implicit Intent. get contacts
+    @Deprecated("Deprecated in Java")
     @SuppressLint("Range")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        /**
-         * Get the Phone Number
-         *
-         */
-
         when {
             resultCode != Activity.RESULT_OK -> return
-            requestCode == REQUEST_PHONE && data != null -> {
+            requestCode == REQUEST_CODE_PHONE && data != null -> {
                 val contactURI: Uri? = data.data
 
                 //Got the phone ID
@@ -375,6 +385,10 @@ class CrimeDetailFragment : Fragment() {
                     val number =
                         it?.getString(it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
 
+                    crimeDetailViewModel.updateCrime { oldCrime ->
+                        oldCrime.copy(suspectNumber = number.toString())
+                    }
+
                     val dialNumber = Intent(Intent.ACTION_DIAL)
                     dialNumber.data = Uri.parse("tel: $number")
                     startActivity(dialNumber)
@@ -387,9 +401,8 @@ class CrimeDetailFragment : Fragment() {
 
     //  chapter 16. Challenge: Another Implicit Intent. Calling
     private fun startCall() {
-        val pickPhoneIntent =
-            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
-        startActivityForResult(pickPhoneIntent, REQUEST_PHONE)
+        val pickPhoneIntent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+        startActivityForResult(pickPhoneIntent, REQUEST_CODE_PHONE)
     }
 
 
@@ -438,5 +451,34 @@ class CrimeDetailFragment : Fragment() {
                 PackageManager.MATCH_DEFAULT_ONLY
             )
         return resolvedActivity != null
+    }
+
+    private fun updatePhoto(photoFileName: String?) {
+        if (binding.crimePhoto.tag != photoFileName) {
+            val photoFile = photoFileName?.let {
+                File(requireContext().applicationContext.filesDir, it)
+            }
+
+            if (photoFile?.exists() == true) {
+                binding.crimePhoto.doOnLayout { measuredView ->
+                    val scaledBitmap = getScaledBitmap(
+                        photoFile.path,
+                        measuredView.width,
+                        measuredView.height
+                    )
+                    binding.crimePhoto.setImageBitmap(scaledBitmap)
+                    binding.crimePhoto.tag = photoFileName
+                }
+            } else {
+                binding.crimePhoto.setImageBitmap(null)
+                binding.crimePhoto.tag = null
+            }
+        }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_PHONE = 0
+        private const val DATE_FORMAT = "EEE, MMM, dd"
+        private const val readContacts = READ_CONTACTS
     }
 }
