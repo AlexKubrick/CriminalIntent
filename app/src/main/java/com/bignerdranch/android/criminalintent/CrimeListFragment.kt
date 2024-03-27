@@ -18,7 +18,9 @@ import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
 import com.bignerdranch.android.criminalintent.crimeAdapter.CrimeListAdapter
 import com.bignerdranch.android.criminalintent.databinding.FragmentCrimeListBinding
 import kotlinx.coroutines.launch
+import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class CrimeListFragment: Fragment() {
@@ -66,6 +68,11 @@ class CrimeListFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+//        val defaultLocale = Locale.getDefault()
+//        val formattedDate = DateFormat.getDateInstance(DateFormat.FULL, defaultLocale)
+//        date = formattedDate.format(Date())
+        // просит Date --получается String. надо ли вообще эту часть править?
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 crimeListViewModel.crimes.collect { crimes ->
@@ -83,7 +90,7 @@ class CrimeListFragment: Fragment() {
                             val newCrime = Crime(
                                 id = UUID.randomUUID(),
                                 title = "",
-                                date = Date(),
+                                date = Date(), //??
                                 isSolved = false
                             )
                             // Suspension functions can be called only within coroutine body

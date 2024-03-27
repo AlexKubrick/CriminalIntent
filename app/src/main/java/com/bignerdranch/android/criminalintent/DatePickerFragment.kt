@@ -2,18 +2,14 @@ package com.bignerdranch.android.criminalintent
 
 import android.app.DatePickerDialog
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
 import android.widget.DatePicker
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import androidx.navigation.fragment.navArgs
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.GregorianCalendar
-import java.util.Locale
 
 class DatePickerFragment: DialogFragment() {
     private val args: DatePickerFragmentArgs by navArgs()
@@ -24,7 +20,8 @@ class DatePickerFragment: DialogFragment() {
 
             val resultDate = GregorianCalendar(year, month, day).time
 
-            setFragmentResult(REQUEST_KEY_DATE,
+            setFragmentResult(
+                REQUEST_KEY_DATE,
                 bundleOf(BUNDLE_KEY_DATE to resultDate))
         }
         val calendar = Calendar.getInstance()

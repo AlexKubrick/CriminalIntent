@@ -22,12 +22,11 @@ class CrimeRepository private constructor(
     private val coroutineScope: CoroutineScope = GlobalScope,
 ) {
 
-    private val database: CrimeDatabase = Room
-        .databaseBuilder(
-            context.applicationContext,
-            CrimeDatabase::class.java,
-            DATABASE_NAME
-        )
+    private val database: CrimeDatabase = Room.databaseBuilder(
+        context.applicationContext,
+        CrimeDatabase::class.java,
+        DATABASE_NAME
+    )
 //        .createFromAsset(DATABASE_NAME)
         .addMigrations(migration_1_2, migration_2_3, migration_3_4)
         .build()

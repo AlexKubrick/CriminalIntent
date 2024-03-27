@@ -3,6 +3,7 @@ package com.bignerdranch.android.criminalintent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
+import com.bignerdranch.android.criminalintent.CrimeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
+import com.bignerdranch.android.criminalintent.CrimeRepository
 import com.bignerdranch.android.criminalintent.databinding.ItemEmptyDatasetBinding
 import kotlinx.coroutines.launch
 import java.util.Date

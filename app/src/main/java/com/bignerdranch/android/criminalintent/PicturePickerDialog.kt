@@ -1,6 +1,5 @@
 package com.bignerdranch.android.criminalintent
 
-import android.app.Dialog
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater

@@ -1,11 +1,9 @@
 package com.bignerdranch.android.criminalintent
 
-import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.TimePickerDialog
 import android.os.Bundle
 import android.text.format.DateFormat
-import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment

@@ -1,39 +1,27 @@
 package com.bignerdranch.android.criminalintent
 
 import android.Manifest.permission.READ_CONTACTS
-import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
-import android.opengl.Visibility
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.provider.Settings.System.DATE_FORMAT
-import android.text.format.DateFormat
-import android.util.Log
+//import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.GONE
 import android.view.ViewGroup
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import com.bignerdranch.android.criminalintent.crimeAdapter.Crime
 import com.bignerdranch.android.criminalintent.databinding.FragmentCrimeDetailBinding
 import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat.requestPermissions
-import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
-import androidx.core.app.ActivityCompat.startActivityForResult
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.FileProvider
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.setFragmentResultListener
@@ -46,6 +34,11 @@ import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Date
+import java.util.Locale
+import java.text.DateFormat
+import java.util.*
+
+
 
 
 class CrimeDetailFragment : Fragment() {
@@ -81,7 +74,10 @@ class CrimeDetailFragment : Fragment() {
         }
     }
 
+    //Chapter 18. Challenge: Localizing Dates
 
+    val defaultLocale = Locale.getDefault()
+    val formattedDate = DateFormat.getDateInstance(DateFormat.FULL, defaultLocale)
 
 
     override fun onCreateView(
@@ -95,11 +91,8 @@ class CrimeDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // chapter 11
-        // Challenge: Formatting the Date
-        // doc: https://developer.android.com/reference/android/icu/text/DateFormat
-        // val date = crime.date
-        // val formattedDate = DateFormat.getDateInstance(DateFormat.FULL, Locale.US).format(date)
+
+
 
         setupUI()
 
@@ -112,7 +105,7 @@ class CrimeDetailFragment : Fragment() {
         }
 
 
-        // Chapter 13. Challenge: No Untitled Crimes. Handle the back button event
+//         Chapter 13. Challenge: No Untitled Crimes. Handle the back button event
 //        val callback = requireActivity().onBackPressedDispatcher.addCallback(this) {
 //            if (binding.crimeTitle.text.trim().isEmpty()) {
 //                Toast.makeText(context, "Please enter the title! ", Toast.LENGTH_LONG).show()
@@ -144,13 +137,6 @@ class CrimeDetailFragment : Fragment() {
                 oldCrime.copy(title = text.toString())
             }
         }
-
-            //  crimeDate.apply {
-            // chapter 11
-            // Challenge: Formatting the Date
-            //    text = formattedDate
-            //      isEnabled = false
-            //    }
 
 
         binding.crimeSolved.setOnCheckedChangeListener { _, isChecked ->
@@ -213,7 +199,10 @@ class CrimeDetailFragment : Fragment() {
             if (crimeTitle.text.toString() != crime.title) {
                 crimeTitle.setText(crime.title)
             }
-            crimeDate.text = crime.date.toString()
+
+
+            //Chapter 18. Challenge: Localizing Dates
+            crimeDate.text = formattedDate.format(Date())
 
             crimeDate.setOnClickListener {
                 findNavController().navigate(
@@ -404,7 +393,9 @@ class CrimeDetailFragment : Fragment() {
             getString(R.string.crime_report_unsolved)
         }
 
-        val dateString = DateFormat.format(DATE_FORMAT, crime.date).toString()
+        
+        //Chapter 18. Challenge: Localizing Dates
+        val dateString = formattedDate.format(Date())
         val suspectText = if (crime.suspect.isBlank()) {
             getString(R.string.crime_report_no_suspect)
         } else {
