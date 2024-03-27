@@ -28,11 +28,6 @@ class PicturePickerDialog : DialogFragment() {
         return view
     }
 
-    // когда миниатюра во фрагменте будет нажата, создать новый экземпляр Диалога
-    // и передать ему необходимую информацию в качестве аргументов.
-
-    // в объекте-компаньоне принять такие параметры, как путь к файлу или идентификатор ресурса изображения,
-    // и сохранить их в бандле.
     companion object {
         fun newInstPicturePicker(photoFileName: String): PicturePickerDialog {
             val frag = PicturePickerDialog()

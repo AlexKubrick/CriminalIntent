@@ -279,15 +279,6 @@ class CrimeDetailFragment : Fragment() {
         }
     }
 
-    //else {
-    //                    if (ContextCompat.checkSelfPermission(
-    //                            it.context,
-    //                            readContacts
-    //                        ) != PackageManager.PERMISSION_GRANTED) {
-    //                        callSuspect.visibility = GONE
-    //                    }
-    //                }
-
 
     // chapter 16. Challenge: Another Implicit Intent. permission
     //https://medium.com/@ominoblair/android-runtime-permissions-91b42d2fa0a3
