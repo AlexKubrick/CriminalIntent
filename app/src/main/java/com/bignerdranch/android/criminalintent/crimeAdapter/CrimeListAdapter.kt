@@ -1,10 +1,12 @@
 package com.bignerdranch.android.criminalintent.crimeAdapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.bignerdranch.android.criminalintent.R
 import com.bignerdranch.android.criminalintent.databinding.ListItemCrimeBinding
 import java.util.UUID
 // The goal, remember, is that when the user presses an
@@ -49,6 +51,18 @@ class CrimeListAdapter(private val crimes: List<Crime>,
 //            is CrimeHolder -> holder.bind(crime)
 //            is CrimeRequiresPoliceHolder -> holder.bind(crime)
 //        }
+
+
+        // Chapter 19. Challenge: Improving the List
+        var contentDescription = "Crime: ${crime.title}, Date: ${crime.date}"
+        contentDescription += if (crime.isSolved) {
+            ", Status: Solved"
+        } else {
+            ", Status: Unsolved"
+        }
+
+        holder.itemView.contentDescription = contentDescription
+
         holder.bind(crime, onCrimeClicked)
     }
 
@@ -60,6 +74,7 @@ class CrimeListAdapter(private val crimes: List<Crime>,
         fun bind(crime: Crime, onCrimeClicked: (crimeId: UUID) -> Unit) {
             binding.crimeTitle.text = crime.title
             binding.crimeDate.text = crime.date.toString()
+//            binding.crimeTitle.contentDescription = getString(R.string.crime_list_item_description)
 
             binding.root.setOnClickListener {
                 onCrimeClicked(crime.id)

@@ -393,7 +393,7 @@ class CrimeDetailFragment : Fragment() {
             getString(R.string.crime_report_unsolved)
         }
 
-        
+
         //Chapter 18. Challenge: Localizing Dates
         val dateString = formattedDate.format(Date())
         val suspectText = if (crime.suspect.isBlank()) {
@@ -450,10 +450,15 @@ class CrimeDetailFragment : Fragment() {
                     )
                     binding.crimePhoto.setImageBitmap(scaledBitmap)
                     binding.crimePhoto.tag = photoFileName
+                    binding.crimePhoto.contentDescription =
+                        getString(R.string.crime_photo_image_description)
                 }
             } else {
                 binding.crimePhoto.setImageBitmap(null)
                 binding.crimePhoto.tag = null
+                binding.crimePhoto.contentDescription =
+                    getString(R.string.crime_photo_no_image_description)
+
             }
         }
     }

@@ -22,13 +22,15 @@
                 android:layout_height="80dp"
                 android:background="@color/cardview_dark_background"
                 android:cropToPadding="true"
-                android:scaleType="centerInside" />
+                android:scaleType="centerInside"
+                android:contentDescription="@string/crime_photo_no_image_description"/>
 
             <ImageButton
                 android:id="@+id/crime_camera"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_camera" />
+                android:src="@drawable/ic_camera"
+                android:contentDescription="@string/crime_photo_button_description"/>
         </LinearLayout>
 
         <LinearLayout
@@ -62,6 +64,13 @@
         android:text="@string/crime_details_label"
         android:textAppearance="?attr/textAppearanceHeadline5" />
 
+    <TextView
+        android:id="@+id/crime_date_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/date"
+        android:labelFor="@+id/crime_date"/>
+
     <Button
         android:id="@+id/crime_date"
         android:layout_width="match_parent"
@@ -93,6 +102,13 @@
         android:layout_height="wrap_content"
         android:text="@string/delete_crime"
         tools:text="Delete" />
+
+    <TextView
+        android:id="@+id/crime_suspect_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/crime_suspect_text"
+        android:labelFor="@+id/crime_suspect"/>
 
     <Button
         android:id="@+id/crime_suspect"
